@@ -1,0 +1,28 @@
+{
+    "name":         "rinatio/facebook",
+    "keywords":     ["Facebook"],
+    "type":         "library",
+    "license":      "MIT",
+    "authors":      [
+        {
+            "name":      "Rinat Silnov",
+            "email":     "mail@rinat.io",
+            "homepage":  "http://rinat.io"
+        }
+    ],
+
+    "require": {
+        "php": ">=5.3",
+        "facebook/php-sdk": "dev-master"
+    },
+
+    "require-dev": {
+        "phpunit/phpunit": "3.7.*"
+    },
+
+    "autoload": {
+        "psr-0": {
+            "rinatio\\Facebook": "src/"
+        }
+    }
+}

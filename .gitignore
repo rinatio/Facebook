@@ -1,0 +1,5 @@
+.idea
+*.phar
+vendor
+composer.lock
+tests/bootstrap-local.php
