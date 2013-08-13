@@ -13,7 +13,7 @@
 
     "require": {
         "php": ">=5.3",
-        "facebook/php-sdk": "dev-master"
+        "guzzle/guzzle": "3.7.*@dev"
     },
 
     "require-dev": {
