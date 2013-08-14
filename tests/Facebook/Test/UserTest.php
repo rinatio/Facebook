@@ -15,8 +15,11 @@ class UserTest extends PHPUnit_Framework_TestCase
 
     public function testCreate()
     {
-        $user = User::create();
+        $user = User::create(array(
+            'name' => 'John'
+        ));
         $this->assertInstanceOf('rinatio\\Facebook\\Test\\User', $user);
+        $this->assertNotEmpty($user->id);
     }
 
     public function testAll()

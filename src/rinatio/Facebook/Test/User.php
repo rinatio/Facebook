@@ -12,30 +12,37 @@ use rinatio\Facebook\Facebook;
  */
 class User
 {
-    public function __construct(array $data)
+    /**
+     * @var array Facebook response data
+     */
+    protected $response;
+
+    /**
+     * @param array $response
+     */
+    protected function __construct(array $response)
     {
-        foreach ($data as $k=> $v) {
-            $this->{$k} = $v;
-        }
+        $this->response = $response;
     }
 
     /**
      * Create new Facebook test user
      *
+     * @param array $parameters
      * @return User
      */
-    public static function create()
+    public static function create(array $parameters = array())
     {
         $client = new \Guzzle\Http\Client('https://graph.facebook.com');
         $path = '/' . Facebook::getAppId() . '/accounts/test-users';
-        $response = $client->post($path, null, array(
+        $response = $client->post($path, null, array_merge(array(
             'access_token' => Facebook::getAppAccessToken()
-        ))->send()->json();
-        return new User($response);
+        ), $parameters))->send()->json();
+        return new static($response);
     }
 
     /**
-     * Get list of application test users.
+     * Get list of application test users
      *
      * @return array
      */
@@ -47,7 +54,7 @@ class User
         $response = $request->send()->json();
         $users = array();
         foreach($response['data'] as $userData) {
-            $user = new User($userData);
+            $user = new static($userData);
             $users[$user->id] = $user;
         }
         return $users;
@@ -65,5 +72,28 @@ class User
             'access_token' => Facebook::getAppAccessToken()
         ))->send()->json();
         return $success;
+    }
+
+    /**
+     * Get Facebook response
+     *
+     * @return array
+     */
+    public function getResponse()
+    {
+        return $this->response;
+    }
+
+    /**
+     * Get a Facebook response property
+     *
+     * @param string $name
+     * @return mixed Facebook response property
+     */
+    public function __get($name)
+    {
+        if(isset($this->response[$name])) {
+            return $this->response[$name];
+        }
     }
 }
