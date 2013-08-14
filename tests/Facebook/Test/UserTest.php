@@ -35,4 +35,14 @@ class UserTest extends PHPUnit_Framework_TestCase
         $user = User::create();
         $this->assertTrue($user->delete());
     }
+
+    public function testDeleteAll()
+    {
+        User::create();
+        User::create();
+        User::deleteAll();
+        $users = User::all();
+        $this->assertInternalType('array', $users);
+        $this->assertEmpty($users);
+    }
 }

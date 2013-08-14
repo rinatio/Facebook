@@ -26,6 +26,29 @@ class User
     }
 
     /**
+     * Get a Facebook response property
+     *
+     * @param string $name
+     * @return mixed Facebook response property
+     */
+    public function __get($name)
+    {
+        if(isset($this->response[$name])) {
+            return $this->response[$name];
+        }
+    }
+
+    /**
+     * Get Facebook response
+     *
+     * @return array
+     */
+    public function getResponse()
+    {
+        return $this->response;
+    }
+
+    /**
      * Create new Facebook test user
      *
      * @param array $parameters
@@ -42,16 +65,23 @@ class User
     }
 
     /**
+     * Delete test user
+     *
+     * @return bool true on success, false on failure
+     */
+    public function delete()
+    {
+        return static::requestDelete($this->id);
+    }
+
+    /**
      * Get list of application test users
      *
      * @return array
      */
     public static function all()
     {
-        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
-        $request = $client->get('/' . Facebook::getAppId() . '/accounts/test-users');
-        $request->getQuery()->set('access_token', Facebook::getAppAccessToken());
-        $response = $request->send()->json();
+        $response = static::requestUserList();
         $users = array();
         foreach($response['data'] as $userData) {
             $user = new static($userData);
@@ -61,39 +91,40 @@ class User
     }
 
     /**
-     * Delete test user
-     *
-     * @return bool true on success, false on failure
+     * Delete all application test users
      */
-    public function delete()
+    public static function deleteAll()
     {
-        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
-        $success = $client->delete('/' . $this->id, null, array(
-            'access_token' => Facebook::getAppAccessToken()
-        ))->send()->json();
-        return $success;
+        $response = static::requestUserList();
+        foreach($response['data'] as $userData) {
+            static::requestDelete($userData['id']);
+        }
     }
 
     /**
-     * Get Facebook response
+     * Send request to get test user list
      *
      * @return array
      */
-    public function getResponse()
+    protected static function requestUserList()
     {
-        return $this->response;
+        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
+        $request = $client->get('/' . Facebook::getAppId() . '/accounts/test-users');
+        $request->getQuery()->set('access_token', Facebook::getAppAccessToken());
+        return $request->send()->json();
     }
 
     /**
-     * Get a Facebook response property
+     * Send request to delete test user by ID
      *
-     * @param string $name
-     * @return mixed Facebook response property
+     * @param $id
+     * @return bool true on success, false on failure
      */
-    public function __get($name)
+    protected static function requestDelete($id)
     {
-        if(isset($this->response[$name])) {
-            return $this->response[$name];
-        }
+        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
+        return $client->delete('/' . $id, null, array(
+            'access_token' => Facebook::getAppAccessToken()
+        ))->send()->json();
     }
 }
