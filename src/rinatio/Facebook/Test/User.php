@@ -13,9 +13,14 @@ use rinatio\Facebook\Facebook;
 class User
 {
     /**
-     * @var array Facebook response data
+     * @var array Facebook create test user response data
      */
-    protected $response;
+    protected $response = [];
+
+    /**
+     * @var array Facebook profile fields
+     */
+    protected $profile = [];
 
     /**
      * @param array $response
@@ -26,15 +31,18 @@ class User
     }
 
     /**
-     * Get a Facebook response property
+     * Get a Facebook response or profile property
      *
      * @param string $name
-     * @return mixed Facebook response property
+     * @return mixed Facebook create test user response property or profile field
      */
     public function __get($name)
     {
-        if(isset($this->response[$name])) {
+        if(array_key_exists($name, $this->response)) {
             return $this->response[$name];
+        }
+        if(array_key_exists($name, $this->profile)) {
+            return $this->profile[$name];
         }
     }
 
@@ -46,6 +54,16 @@ class User
     public function getResponse()
     {
         return $this->response;
+    }
+
+    /**
+     * Get user's profile
+     *
+     * @return array
+     */
+    public function getProfile()
+    {
+        return $this->profile;
     }
 
     /**
@@ -126,5 +144,27 @@ class User
         return $client->delete('/' . $id, null, array(
             'access_token' => Facebook::getAppAccessToken()
         ))->send()->json();
+    }
+
+    /**
+     * Request Facebook graph api user profile data
+     *
+     * @link https://developers.facebook.com/docs/reference/api/user/
+     * @return array
+     */
+    protected function requestUserProfile()
+    {
+        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
+        return $client->get('/' . $this->id)->send()->json();
+    }
+
+    /**
+     * Fetch Facebook graph api user profile data
+     *
+     * @see requestUserProfile()
+     */
+    public function fetchProfile()
+    {
+        $this->profile = $this->requestUserProfile();
     }
 }

@@ -45,4 +45,15 @@ class UserTest extends PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $users);
         $this->assertEmpty($users);
     }
+
+    public function testFetchProfile()
+    {
+        $user = User::create(array(
+            'name' => 'Robin Hood'
+        ));
+        $user->fetchProfile();
+        $this->assertEquals('Robin Hood', $user->name);
+        $this->assertEquals('Robin', $user->first_name);
+        $this->assertEquals('Hood', $user->last_name);
+    }
 }
