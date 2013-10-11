@@ -3,24 +3,31 @@
 namespace rinatio\Facebook\Test;
 
 use rinatio\Facebook\Facebook;
+use Guzzle\Http\Client;
 
 /**
  * Class User
  *
  * @link https://developers.facebook.com/docs/test_users/
  * @package rinatio\Facebook\Test
+ * @property string $id
+ * @property string $name
+ * @property string $password
+ * @property string $first_name
+ * @property string $last_name
+ * @property string $access_token
  */
 class User
 {
     /**
      * @var array Facebook create test user response data
      */
-    protected $response = [];
+    protected $response = array();
 
     /**
      * @var array Facebook profile fields
      */
-    protected $profile = [];
+    protected $profile = array();
 
     /**
      * @param array $response
@@ -31,6 +38,11 @@ class User
     }
 
     /**
+     * @var null|\Guzzle\Http\Client
+     */
+    protected static $client;
+
+    /**
      * Get a Facebook response or profile property
      *
      * @param string $name
@@ -38,12 +50,25 @@ class User
      */
     public function __get($name)
     {
-        if(array_key_exists($name, $this->response)) {
-            return $this->response[$name];
-        }
         if(array_key_exists($name, $this->profile)) {
             return $this->profile[$name];
         }
+        if(array_key_exists($name, $this->response)) {
+            return $this->response[$name];
+        }
+    }
+
+    /**
+     * Get the Guzzle client for requests
+     *
+     * @return Client
+     */
+    protected static function getClient()
+    {
+        if(!static::$client) {
+            static::$client = new Client('https://graph.facebook.com');
+        }
+        return static::$client;
     }
 
     /**
@@ -67,16 +92,19 @@ class User
     }
 
     /**
-     * Create new Facebook test user
+     * Create new Facebook test user. Note that after create request
+     * you have only few properties available
+     * (an id, access_token, email, login_url and password at this point).
+     * You should run {@link User::fetchProfile()} if you need others.
      *
-     * @param array $parameters
+     * @param array $parameters a parameters for create request like name,
+     * locale, installed etc.
      * @return User
      */
     public static function create(array $parameters = array())
     {
-        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
         $path = '/' . Facebook::getAppId() . '/accounts/test-users';
-        $response = $client->post($path, null, array_merge(array(
+        $response = static::getClient()->post($path, null, array_merge(array(
             'access_token' => Facebook::getAppAccessToken()
         ), $parameters))->send()->json();
         return new static($response);
@@ -126,8 +154,7 @@ class User
      */
     protected static function requestUserList()
     {
-        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
-        $request = $client->get('/' . Facebook::getAppId() . '/accounts/test-users');
+        $request = static::getClient()->get('/' . Facebook::getAppId() . '/accounts/test-users');
         $request->getQuery()->set('access_token', Facebook::getAppAccessToken());
         return $request->send()->json();
     }
@@ -140,8 +167,7 @@ class User
      */
     protected static function requestDelete($id)
     {
-        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
-        return $client->delete('/' . $id, null, array(
+        return static::getClient()->delete('/' . $id, null, array(
             'access_token' => Facebook::getAppAccessToken()
         ))->send()->json();
     }
@@ -154,8 +180,7 @@ class User
      */
     protected function requestUserProfile()
     {
-        $client = new \Guzzle\Http\Client('https://graph.facebook.com');
-        return $client->get('/' . $this->id)->send()->json();
+        return static::getClient()->get('/' . $this->id)->send()->json();
     }
 
     /**
@@ -165,6 +190,54 @@ class User
      */
     public function fetchProfile()
     {
-        $this->profile = $this->requestUserProfile();
+        $this->profile = array_merge($this->profile, $this->requestUserProfile());
+    }
+
+    /**
+     * Add a friend connection
+     *
+     * @link https://developers.facebook.com/docs/test_users/#makingfriendconnections
+     * @param User $friend
+     * @return bool true on success, false on failure
+     */
+    public function addFriend(User $friend)
+    {
+        $client = static::getClient();
+        $response = $client->post($this->id . '/friends/' . $friend->id, null, array(
+            'access_token' => $this->access_token
+        ))->send()->json();
+        if($response) {
+            return $client->post($friend->id . '/friends/' . $this->id, null, array(
+                'access_token' => $friend->access_token
+            ))->send()->json();
+        }
+    }
+
+    /**
+     * Update user's name and/or password
+     *
+     * @link https://developers.facebook.com/docs/test_users/#changepw
+     * @param array $properties an attributes to be changed. Only name and password
+     * supported so far
+     * @return bool
+     * @throws \InvalidArgumentException if parameters are empty, or contain bad parameter
+     */
+    public function update(array $properties)
+    {
+        $changeable = array('name', 'password');
+        $diff = array_diff_key($properties, array_flip($changeable));
+        if(array() !== $diff) {
+            $error = 'Cannot change ' . implode(', ', array_keys($diff));
+            throw new \InvalidArgumentException($error);
+        } elseif(empty($properties)) {
+            throw new \InvalidArgumentException('Properties cannot be empty');
+        }
+        $success = static::getClient()->post($this->id, null, array_merge(array(
+            'access_token' => Facebook::getAppAccessToken()
+        ), $properties))->send()->json();
+        if($success) {
+            $this->profile = array_merge($properties, $this->profile);
+            return true;
+        }
     }
 }
