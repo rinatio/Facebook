@@ -1,8 +1,8 @@
-Facebook Test API wrapper
+Facebook Test User API wrapper
 ========
 
 This is a wrapper for Facebook [Test User API](https://developers.facebook.com/docs/test_users).
-It allows you to create, read, update and delete Facebook test users.
+It allows you to create, read, update and delete Facebook test users in OOP style.
 
 ##Installation
 
