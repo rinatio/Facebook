@@ -8,7 +8,7 @@ It allows you to create, read, update and delete Facebook test users in OOP styl
 
 You can install it through [composer](http://getcomposer.org/) with this command:
 
-    $ php composer.phar require rinatio/Facebook:dev-master
+    $ php composer.phar require --dev rinatio/Facebook:~0.1
 
 After installing, you need to require Composer's autoloader:
 
